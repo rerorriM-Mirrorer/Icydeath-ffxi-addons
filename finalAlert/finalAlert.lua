@@ -1,6 +1,6 @@
 _addon.name = "finalAlert"
 _addon.author = "Godchain"
-_addon.version = "1.2"
+_addon.version = "1.3-draggable"
 _addon.commands = {"finalAlert", "fa"}
 
 config = require("config")
@@ -30,8 +30,54 @@ defaults.background_size = "regular"
 defaults.emphasize = S {}
 defaults.trigger_duration = 3
 defaults.sounds = "on"
+defaults.draggable = true
 
 settings = config.load(defaults)
+
+-- Draggable positioning -------------------------------------------------------
+local drag_state = nil
+local ALERT_WIDTH = 500
+local ALERT_HEIGHT = 90
+
+local function position_backgrounds()
+    local x = settings.x_position - 250
+    local y = settings.y_position
+    windower.prim.set_position(background_ability, x, y)
+    windower.prim.set_position(background_magic, x, y)
+    windower.prim.set_position(background_interrupt, x, y)
+    windower.prim.set_position(background_emphasize, x, y)
+end
+
+local function mouse_over_alert(x, y)
+    if not showing then return false end
+    local left = settings.x_position - (ALERT_WIDTH / 2)
+    local top = settings.y_position
+    return x >= left and x <= left + ALERT_WIDTH and y >= top and y <= top + ALERT_HEIGHT
+end
+
+windower.register_event(
+    "mouse",
+    function(type, x, y, delta, blocked)
+        if blocked then return end
+
+        if type == 1 then -- left press
+            if settings.draggable ~= false and mouse_over_alert(x, y) then
+                drag_state = {x = x - settings.x_position, y = y - settings.y_position}
+                return true
+            end
+        elseif type == 0 and drag_state then -- move while held
+            settings.x_position = math.floor(x - drag_state.x + 0.5)
+            settings.y_position = math.floor(y - drag_state.y + 0.5)
+            position_backgrounds()
+            return true
+        elseif type == 2 and drag_state then -- release
+            drag_state = nil
+            settings:save()
+            print("Position saved: " .. settings.x_position .. ", " .. settings.y_position)
+            return true
+        end
+    end
+)
 
 windower.register_event(
     "load",
@@ -73,6 +119,9 @@ windower.register_event(
             print('Toggles emphasis for "Firaga VI" (plays a different sound).')
             print(bullet .. "//fa pos 960 200")
             print("Moves the display to 960 X (horizontal) and 200 Y (vertical).")
+            print(bullet .. "Drag the visible alert with the mouse to reposition it; position saves on release.")
+            print(bullet .. "//fa lock  /  //fa unlock")
+            print("Locks or unlocks mouse dragging.")
             print(bullet .. "//fa size small")
             print("Sets the display size to small (accepts 'regular' and 'small').")
             print(bullet .. "//fa duration 5")
@@ -114,6 +163,14 @@ windower.register_event(
             else
                 print("Please specify x and y coordinates.")
             end
+        elseif cmd == "lock" then
+            settings.draggable = false
+            settings:save()
+            print("Dragging locked.")
+        elseif cmd == "unlock" then
+            settings.draggable = true
+            settings:save()
+            print("Dragging unlocked.")
         elseif cmd == "size" then
             local size = args[1]
 
