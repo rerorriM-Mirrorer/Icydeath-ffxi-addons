@@ -1,6 +1,6 @@
 _addon.name = "finalAlert"
 _addon.author = "Godchain"
-_addon.version = "1.3-draggable"
+_addon.version = "1.4-edit-mode"
 _addon.commands = {"finalAlert", "fa"}
 
 config = require("config")
@@ -36,8 +36,36 @@ settings = config.load(defaults)
 
 -- Draggable positioning -------------------------------------------------------
 local drag_state = nil
+local edit_mode = false
+local EDIT_CAPTION = "EDITING MODE - Exit with //fa edit"
 local ALERT_WIDTH = 500
 local ALERT_HEIGHT = 90
+
+local function finish_drag()
+    if not drag_state then return end
+    drag_state = nil
+    settings:save()
+    print("Position saved: " .. settings.x_position .. ", " .. settings.y_position)
+end
+
+local function show_edit_preview()
+    hide_caption()
+    showing = true
+    caption:text(EDIT_CAPTION)
+    caption:show()
+    windower.prim.set_visibility(background_ability, true)
+end
+
+local function set_edit_mode(enabled)
+    if edit_mode == enabled then return end
+    finish_drag()
+    edit_mode = enabled
+    if edit_mode then
+        show_edit_preview()
+    else
+        hide_caption()
+    end
+end
 
 local function position_backgrounds()
     local x = settings.x_position - 250
@@ -61,7 +89,7 @@ windower.register_event(
         if blocked then return end
 
         if type == 1 then -- left press
-            if settings.draggable ~= false and mouse_over_alert(x, y) then
+            if (edit_mode or settings.draggable ~= false) and mouse_over_alert(x, y) then
                 drag_state = {x = x - settings.x_position, y = y - settings.y_position}
                 return true
             end
@@ -71,9 +99,7 @@ windower.register_event(
             position_backgrounds()
             return true
         elseif type == 2 and drag_state then -- release
-            drag_state = nil
-            settings:save()
-            print("Position saved: " .. settings.x_position .. ", " .. settings.y_position)
+            finish_drag()
             return true
         end
     end
@@ -97,7 +123,7 @@ windower.register_event(
             local y_offset =
                 settings.background_size == "regular" and settings.y_position + 10 or settings.y_position + 3
             caption:pos(x_offset, y_offset)
-            if os.time() - last_trigger > settings.trigger_duration then
+            if not edit_mode and os.time() - last_trigger > settings.trigger_duration then
                 hide_caption()
             end
         else
@@ -119,15 +145,28 @@ windower.register_event(
             print('Toggles emphasis for "Firaga VI" (plays a different sound).')
             print(bullet .. "//fa pos 960 200")
             print("Moves the display to 960 X (horizontal) and 200 Y (vertical).")
+            print(bullet .. "//fa edit  /  //fa edit on  /  //fa edit off")
+            print("Toggles a silent, persistent preview for dragging, even while locked.")
             print(bullet .. "Drag the visible alert with the mouse to reposition it; position saves on release.")
             print(bullet .. "//fa lock  /  //fa unlock")
-            print("Locks or unlocks mouse dragging.")
+            print("Locks or unlocks mouse dragging outside edit mode.")
             print(bullet .. "//fa size small")
-            print("Sets the display size to small (accepts 'regular' and 'small').")
+            print("Sets the display size (accepts 'regular' and 'small'); //fa size toggles it.")
             print(bullet .. "//fa duration 5")
             print("Sets the display duration to 5 seconds.")
             print(bullet .. "//fa sounds off")
-            print("Turns off sounds except for emphasized abilities (accepts 'on' and 'off').")
+            print("Sets ordinary sounds (accepts 'on' and 'off'); //fa sounds toggles them. Emphasized sounds still play.")
+        elseif cmd == "edit" then
+            local state = args[1]
+            if state == nil then
+                set_edit_mode(not edit_mode)
+            elseif state == "on" or state == "off" then
+                set_edit_mode(state == "on")
+            else
+                print('Use //fa edit, //fa edit on or //fa edit off.')
+                return
+            end
+            print(edit_mode and "Editing mode on. Drag the banner; exit with //fa edit." or "Editing mode off.")
         elseif cmd == "test" then
             if args[1] == "ws" then
                 show_caption("Self-Destruct", "ws")
@@ -173,6 +212,9 @@ windower.register_event(
             print("Dragging unlocked.")
         elseif cmd == "size" then
             local size = args[1]
+            if size == nil then
+                size = settings.background_size == "small" and "regular" or "small"
+            end
 
             if size == "small" or size == "regular" then
                 settings.background_size = size
@@ -193,6 +235,9 @@ windower.register_event(
             end
         elseif cmd == "sounds" then
             local state = args[1]
+            if state == nil then
+                state = settings.sounds == "on" and "off" or "on"
+            end
 
             if state == "on" or state == "off" then
                 settings.sounds = state
@@ -210,6 +255,7 @@ windower.register_event(
 windower.register_event(
     "action",
     function(act)
+        if edit_mode then return end
         local target
 
         if windower.ffxi.get_mob_by_target("t") and windower.ffxi.get_mob_by_target("t").is_npc then
@@ -249,6 +295,7 @@ windower.register_event(
 
 function refresh_backgrounds()
     create_backgrounds(settings.x_position - 250, settings.y_position)
+    if edit_mode then show_edit_preview() end
 end
 
 function create_backgrounds(x, y)
@@ -290,6 +337,7 @@ function create_backgrounds(x, y)
 end
 
 function show_caption(text, type)
+    if edit_mode then return end
     local event_type
 
     hide_caption()
