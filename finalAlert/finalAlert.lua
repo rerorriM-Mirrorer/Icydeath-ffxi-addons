@@ -7,7 +7,9 @@ config = require("config")
 texts = require("texts")
 res = require("resources")
 
-caption = texts.new({})
+-- The banner owns dragging. texts defaults to draggable=true, which otherwise
+-- captures clicks on the caption and fights our per-frame caption positioning.
+caption = texts.new({flags = {draggable = false}})
 
 background_ability = "background_ability"
 background_magic = "background_magic"
