@@ -1,4 +1,29 @@
-# finalAlert — Test 1: lifecycle, subdued palette and drag repair
+# finalAlert — Test 2: six-second startup
+
+## Current batch — Test 2, 2026-10-15
+
+Version **1.5.0-test2**, on `finalalert-lifecycle-test1`; source/package revision is in `finalAlert/REVISION.txt`. Master remains unchanged.
+
+Merge the packaged `finalAlert` folder into the installed addon, preserve `data/settings.xml`, then run `//lua reload finalAlert`.
+
+- [ ] On load/reload, the grey frame reads `Final Alert` for six seconds, silently, regardless of saved fixed duration or sound preference.
+- [ ] A real action alert or `//fa` replaces the startup display immediately; it does not return afterward.
+- [ ] `//fa` cycles through Casting: Edit Mode (pink), Edit Mode (pink), Readying: Edit Mode (blue), Edit Mode (blue), Edit Mode (grey). Check whether the reported missing backgrounds are the old saturated artwork or absent preparation frames.
+
+Automated: Lua 5.1 parsing and mocked integration passed, including startup expiry at six seconds, silence with sounds on, gameplay priority, and both preview preparation frames. Actual live startup and the reported preview appearance still need confirmation.
+
+User observations/request after Test 1: preparation windows look good; asked whether older magic/action windows changed and reported windows missing from the preview. Code review confirms Test 1 intentionally replaced both preparation/execution artwork with the subdued tinted neutral frame. The five preview entries select the same frames as gameplay. No original-artwork restoration or palette change is made without clarifying which appearance is wanted.
+
+### Delivery register addition
+
+| Batch | Revision | Status |
+| --- | --- | --- |
+| Test 2 | 1.5.0-test2; exact final source revision in packaged finalAlert/REVISION.txt | Startup and preview regression checks passed; live confirmation pending. |
+| Test 1 published source | 1f94f733f82210ba161d1f8b6c9de02742d67b0c | User reports preparation appearance looks good; preview report retained above. |
+
+The previous batch record is preserved below. Its references to current/pending checks describe that delivery, not a new assertion about Test 2.
+
+---
 
 ## Current batch — 2026-10-15
 

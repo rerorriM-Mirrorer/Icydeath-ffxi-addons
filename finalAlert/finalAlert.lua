@@ -1,6 +1,6 @@
 _addon.name = 'finalAlert'
 _addon.author = 'Godchain; A'
-_addon.version = '1.5.0-test1'
+_addon.version = '1.5.0-test2'
 _addon.commands = {'finalAlert', 'fa'}
 
 local config = require('config')
@@ -434,6 +434,9 @@ windower.register_event('load', function()
     guide:bg_visible(false); guide:color(195, 195, 195)
     guide:text('Drag to move | Exit with //fa edit')
     refresh_backgrounds()
+    -- A silent load confirmation uses its own six-second deadline. It does
+    -- not change saved timing, enter edit mode, or delay real combat alerts.
+    display({text = 'Final Alert', kind = 'int', phase = 'startup'}, 6, false)
 end)
 windower.register_event('addon command', handle_command)
 windower.register_event('action', handle_action)

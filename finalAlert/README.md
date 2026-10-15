@@ -1,6 +1,6 @@
 # finalAlert
 
-Godchain's Windower alert banner, developed with A. Version **1.5.0-test1**.
+Godchain's Windower alert banner, developed with A. Version **1.5.0-test2**.
 
 Shows the selected NPC's spell and ability preparations, interruptions, and—optionally—execution events. If the selected target is not an NPC, the battle target is used when available.
 
@@ -9,6 +9,8 @@ Shows the selected NPC's spell and ability preparations, interruptions, and—op
 Copy the `finalAlert` folder into `Windower/addons`, merging with your existing folder. Keep your own `data/settings.xml`: this package deliberately supplies no saved settings. Reload with `//lua reload finalAlert`.
 
 New installations default to fixed timing, sounds off, regular size, scale 1, unlocked dragging, and a banner centered in the current UI viewport. Saved coordinates and explicit sound preferences are preserved. On an existing installation use `//fa pos reset` and `//fa sounds off` to select those defaults yourself.
+
+On load/reload, a silent grey banner reads **Final Alert** for six seconds, independently of the saved alert duration. A real alert or edit preview can replace it immediately. It does not enable edit mode or change any saved setting.
 
 ## Timing
 
@@ -77,6 +79,11 @@ lua finalAlert/tests/test_finalalert.lua
 Automated verification is not live FFXI testing. Confirm the palette, smooth dragging, actual monster finish/interruption events, and low-resolution layout in game before promoting the working branch. Some actions may not emit every expected event; fallback and finish-without-start handling address that uncertainty without inventing completion.
 
 ## Cumulative changelog
+
+### 1.5.0-test2
+
+- Show a silent `Final Alert` startup banner for six seconds on load/reload. Real alerts and edit mode take priority; saved duration is unchanged.
+- Check both preparation frames in the edit cycle. Test 1 already changed both preparation and execution to the same neutral artwork with subdued pink/blue tints; the original saturated magic/ability textures remain supplied but are not used by these states. This batch does not change that palette or restore the old artwork.
 
 ### 1.5.0-test1
 

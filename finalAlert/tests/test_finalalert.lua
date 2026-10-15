@@ -103,11 +103,14 @@ local c=session()
 equal(c.settings.sounds,'off');equal(c.settings.timing,'fixed')
 equal(c.settings.x_position,960);equal(c.settings.y_position,520)
 check(not c.caption.draggable_flag and not c.guide.draggable_flag)
-check(not c.caption.is_visible)
+equal(c.caption.content,'Final Alert');check(c.caption.is_visible and not c.guide.is_visible)
+equal(#c.sounds,0)
+c:tick(5.99);check(c.caption.is_visible)
+c:tick(0.01);check(not c.caption.is_visible)
 c:command();equal(c.caption.content,'Casting: Edit Mode');check(c.guide.is_visible)
 check(c.help_colors[140] and c.help_colors[167] and c.help_colors[200] and c.help_colors[207] and c.help_colors[0])
 c:tick(1.5);equal(c.caption.content,'Edit Mode');check(c.prims.finalAlert_magic.visible)
-c:tick(1.5);equal(c.caption.content,'Readying: Edit Mode')
+c:tick(1.5);equal(c.caption.content,'Readying: Edit Mode');check(c.prims.finalAlert_ability.visible)
 c:tick(1.5);equal(c.caption.content,'Edit Mode');check(c.prims.finalAlert_ability.visible)
 c:tick(1.5);check(c.prims.finalAlert_interrupt.visible)
 c:tick(1.5);equal(c.caption.content,'Casting: Edit Mode')
@@ -199,15 +202,18 @@ check(c.caption.opacity<255 and c.guide.opacity<255)
 c:tick(0.07);equal(#c.commands,1);equal(c.commands[1],'lua reload finalAlert')
 for _,p in pairs(c.prims) do check(p.deleted) end
 c:tick(2);c.events.unload();equal(#c.commands,1)
-c=session();c:command('unload');equal(#c.commands,1);equal(c.commands[1],'lua unload finalAlert')
+c=session();c:command('unload');c:tick(0.13);equal(#c.commands,1);equal(c.commands[1],'lua unload finalAlert')
 -- Existing explicitly saved preferences survive the upgrade.
 c=session({sounds='on',x_position=750,y_position=200,background_size='small',draggable=false})
 equal(c.settings.sounds,'on');equal(c.settings.x_position,750);equal(c.settings.y_position,200)
 c:command('edit','on');check(c.caption.is_visible)
 local persisted={sounds=c.settings.sounds,x_position=c.settings.x_position,y_position=c.settings.y_position,draggable=c.settings.draggable}
-c=session(persisted);check(not c.caption.is_visible);equal(c.settings.draggable,false)
+c=session(persisted);equal(c.caption.content,'Final Alert');check(not c.guide.is_visible);equal(c.settings.draggable,false)
+equal(#c.sounds,0) -- even an installation with sounds on gets a silent startup
+c:action(8,1);equal(c.caption.content,'Fire') -- real alerts take precedence
 c.viewport={x_res=640,y_res=360,ui_x_res=640,ui_y_res=360}
 c:command('pos','reset');equal(c.settings.x_position,320);equal(c.settings.y_position,160)
 c.target={id=99,is_npc=false};c.battle={id=1001,is_npc=true,hpp=100}
 c:action(8,1);equal(c.caption.content,'Fire')
 print('PASS: emphasis matching/silence, invalid commands, uncapped positive timers, graceful once-only restart/unload, saved-settings/reload compatibility and battle-target fallback')
+print('PASS: six-second silent startup, reload startup without edit mode, real-event priority, preview preparation frames')
