@@ -1,50 +1,108 @@
 # finalAlert
 
-Author: Godchain. Version `1.4-edit-mode` builds on the tested `1.3-draggable` update.
+Godchain's Windower alert banner, developed with A. Version **1.5.0-test1**.
 
-Displays a banner when the selected NPC begins a TP move or spell, or its action is interrupted. If the selected target is not an NPC, the addon uses the battle target when available. Ability, magic, interrupt, and emphasized alerts retain their existing textures and sounds.
+Shows the selected NPC's spell and ability preparations, interruptions, and—optionally—execution events. If the selected target is not an NPC, the battle target is used when available.
 
-## Installation
+## Install this test batch
 
-Copy the complete `finalAlert` folder into Windower's `addons` folder, keeping `images` and `sounds`. Load with `//lua load finalAlert`. Existing settings in `data/settings.xml` remain compatible; do not replace your settings with another player's file.
+Copy the `finalAlert` folder into `Windower/addons`, merging with your existing folder. Keep your own `data/settings.xml`: this package deliberately supplies no saved settings. Reload with `//lua reload finalAlert`.
+
+New installations default to fixed timing, sounds off, regular size, scale 1, unlocked dragging, and a banner centered in the current UI viewport. Saved coordinates and explicit sound preferences are preserved. On an existing installation use `//fa pos reset` and `//fa sounds off` to select those defaults yourself.
+
+## Timing
+
+- `//fa timing fixed` preserves the original start-triggered alert: bare action name for the fixed duration. Finish events do not extend that duration.
+- `//fa timing lifecycle` shows `Casting: <spell>` or `Readying: <ability>` until a matching execution event. It then shows the bare name briefly. An interruption displays `Interrupted` on the original grey frame.
+- Lifecycle preparation has a separate fallback timeout. Expiry only hides the banner; it never claims the action completed. Completion events mean execution/resolution was reported, not that damage landed or an animation finished.
+
+Defaults: fixed duration **3 seconds**, completion/interruption display **1 second**, preparation timeout **30 seconds**. Durations accept positive finite values, including fractions; there are no arbitrary upper caps. Changes are saved. Changing a duration affects subsequent alerts, not a currently running deadline.
+
+The same muted grey-pink frame is used for magic preparation and execution. Ability preparation and execution share a muted grey-blue frame. Both reuse the original neutral frame's artwork with runtime tinting; interruption remains untinted grey. Text stays white. Emphasized names retain their extra highlight.
+
+## Edit and preview
+
+**Bare `//fa` displays help and toggles the edit preview.** This is a deliberate primary action. `//fa help` only shows help.
+
+The silent preview cycles every 1.5 seconds:
+
+1. `Casting: Edit Mode` — grey-pink magic frame.
+2. `Edit Mode` — same magic frame.
+3. `Readying: Edit Mode` — grey-blue ability frame.
+4. `Edit Mode` — same ability frame.
+5. `Edit Mode` — grey interruption frame.
+
+Drag either the frame or its caption. The cycle pauses while held; release saves the banner position and resumes the cycle after a full preview interval. `//fa edit`, `//fa edit on`, and `//fa edit off` also control the preview. Repeating explicit `on`/`off` commands is safe.
+
+Editing overrides the saved drag lock without changing it. Combat events cannot replace the preview. Exiting hides it; the next gameplay event works normally. Preview state is temporary and is cleared by restart, reload, logout, or zoning. A separate guide explains how to exit without changing the requested preview captions.
+
+The caption and guide have Windower's built-in text dragging disabled. One banner handler moves the text and artwork together, handles a blocked release after taking ownership of a drag, and saves on release. Hit areas follow the actual frame size and scale. Hidden alerts never capture a press.
 
 ## Commands
 
-Both `//fa` and `//finalAlert` are accepted. Command arguments below are lowercase.
+Aliases: `//fa` and `//finalAlert`. Command words and enum arguments are case-insensitive; action names retain their entered spelling. `<required>` arguments must be supplied; `[optional]` arguments can be omitted. Invalid commands/arguments show help without changing settings.
 
 | Command | Behavior |
 | --- | --- |
-| `//fa help` | Show command help. |
-| `//fa edit` | Toggle a silent, persistent positioning preview. |
-| `//fa edit on` / `//fa edit off` | Explicitly enable/disable the preview. Repeating either command keeps the requested state. |
-| `//fa test ws` | Show a Self-Destruct TP-move test. |
-| `//fa test ma` | Show a Tornado II magic test. |
-| `//fa test int` | Show an interruption test. |
-| `//fa pos 960 200` | Set and save the banner's horizontal center and top Y position. |
-| `//fa lock` / `//fa unlock` | Disable/enable normal-alert mouse dragging and save the setting. Edit mode always permits dragging. |
-| `//fa size` | Toggle small/regular background textures and save the setting. |
-| `//fa size small` / `//fa size regular` | Select and save the background texture size. |
-| `//fa duration 5` | Set a positive display duration in seconds for the current session. This command does not save immediately. |
-| `//fa sounds` | Toggle ordinary alert sounds on/off and save the setting. |
-| `//fa sounds on` / `//fa sounds off` | Set and save ordinary alert sounds. Emphasized alerts still play their sound. |
-| `//fa emphasize Firaga VI` | Toggle and save emphasis for a name; matching ignores whitespace and case. |
+| `//fa` | Show help and toggle the cycling edit preview. |
+| `//fa help` | Show chat-only command help. |
+| `//fa edit [on|off]` | Toggle/set the preview. |
+| `//fa timing [fixed|lifecycle]` | Report/set the timing mode. |
+| `//fa duration [seconds]` | Report/set fixed duration; default 3. |
+| `//fa finish [seconds]` | Report/set lifecycle result duration; default 1. |
+| `//fa timeout [seconds]` | Report/set lifecycle preparation fallback; default 30. |
+| `//fa pos [<x> <y>|reset]` | Report position, move, or reset to screen center. X is the banner center; Y is its top. Positions are kept reachable. |
+| `//fa size [small|regular]` | Toggle/set frame size. Native frames are 500×25 or 500×40. |
+| `//fa scale [number]` | Report/set a positive finite scale. Text scales too, with a one-pixel minimum font size. |
+| `//fa sounds [on|off]` | Toggle/set all alert sounds; off includes emphasis sounds. Preview is always silent. |
+| `//fa emphasize <action name>` | Toggle saved emphasis. Matching ignores whitespace and case and uses the underlying action name, excluding prefixes. |
+| `//fa lock` / `//fa unlock` | Save normal-alert dragging locked/unlocked. |
+| `//fa test <ws|ma|int>` | Show a single fixed-duration test, unless editing. |
+| `//fa status` | Report version, settings, position and tracked phase/actor. |
+| `//fa restart` | Briefly fade visible content, clean up and reload saved settings. |
+| `//fa unload` | Briefly fade visible content, clean up and unload. |
 
-## Dragging and saved settings
+Sounds are opt-in. When enabled, emphasis changes the warning sound as before, but execution does not replay a preparation warning. Gameplay alerts use restrained 0.12-second fades within their display interval. Restart/unload dispatch once even if requested repeatedly. No keybinds are installed.
 
-Dragging is enabled by default. While an alert is visible, press the left mouse button over its banner, move it, and release. All four backgrounds follow the saved center/top coordinates; the caption follows during rendering. Release saves `x_position` and `y_position` and prints `Position saved: X, Y`.
+## Development and testing
 
-Use `//fa edit` to show `EDITING MODE - Exit with //fa edit`. Drag the banner, then use `//fa edit` again or `//fa edit off` to finish. The preview stays visible indefinitely without changing alert duration. It plays no sound, and combat alerts and `//fa test` cannot replace it while editing. Size and position commands update the preview immediately.
+See repository-root `TESTING.md` for this batch's installation, checks and historical record, and `WORKFLOW.md` for shared conventions. `docs/PACKETS.md` distinguishes source-confirmed packet interpretation from still-needed live observations.
 
-Edit mode temporarily allows dragging even when locked; the saved lock setting still applies to normal alerts afterward. Exiting hides the preview, and the next normal alert works as usual. Edit mode is not saved, so reloading always returns to normal operation. If you exit while dragging, the current position is saved before the preview closes.
+The suite under `tests/` exercises the addon against mocked Windower APIs. Run from this repository's root with Lua 5.1 or newer:
 
-Hidden alerts cannot start a drag. The mouse hit area remains 500 × 90 pixels for both texture sizes, matching the tested draggable implementation.
+```text
+lua finalAlert/tests/test_finalalert.lua
+```
 
-Defaults are horizontal screen center, Y=100, regular textures, three-second duration, ordinary sounds on, no emphasized names, and dragging enabled. Settings are managed by Windower's config library. Duration remains in memory until reload unless another setting-save operation persists it.
+Automated verification is not live FFXI testing. Confirm the palette, smooth dragging, actual monster finish/interruption events, and low-resolution layout in game before promoting the working branch. Some actions may not emit every expected event; fallback and finish-without-start handling address that uncertainty without inventing completion.
 
-## Scope and verification
+## Cumulative changelog
 
-The fork includes draggable positioning, release-to-save confirmation, and lock/unlock from the tested 1.3 update. Version 1.4 adds temporary edit mode and no-argument size/sound toggles. Normal targeting, alert timing, textures, sounds, and emphasis behavior are retained.
+### 1.5.0-test1
 
-Background alpha/off, font, stroke, theme, and other visual enhancements are not implemented here. Earlier discussion deferred further enhancements after draggable positioning.
+- Add selectable lifecycle timing; keep fixed timing as the default.
+- Show preparation prefixes, a brief bare-name execution state, and grey interruption state; clear missing finishes after an independent timeout.
+- Match actor, action ID and resource family; ignore mismatched/duplicate transitions. Clear lifecycle tracking on target loss/change, death, zoning and logout.
+- Add subdued grey-pink/grey-blue runtime frame tints with identical preparation/execution colors.
+- Default fresh settings to sounds off and a centered banner. Preserve existing saved preferences. Off now silences emphasis too.
+- Fix competing text/banner drag handlers; move text/frame together, pause the preview while dragging and recover positions after resolution changes.
+- Add the five-stage preview; bare `//fa` now shows help and toggles it.
+- Adopt fragment-colored chat help, invalid-command help, status, scale, center recovery, and graceful restart/unload.
+- Save duration changes, unlike 1.4's session-only duration command. Completion and fallback settings are independently configurable.
+- Keep stable rendering cached during long preparations; avoid repeating identical engine updates across clients.
+- Add regression checks, packet notes, cumulative testing records and the shared workflow.
 
-Offline checks cover Lua parsing and mocked Windower behavior for existing alert types, targeting, emphasis/sounds, auto-hide, dragging, saved coordinates, and lock/unlock, plus persistent/silent edit mode, explicit and toggle commands, preview resizing/repositioning, exit/reload behavior, and invalid arguments. Actual rendering and sound playback require an in-game check.
+### 1.4-edit-mode
+
+- Add a persistent silent edit preview, explicit edit on/off, and no-argument size/sound toggles.
+- Keep combat events from replacing the preview; maintain saved lock state outside editing.
+- Published at `fcbe6f332d960734ae990b106efe645bd07f6436`. This conversation did not record a subsequent live-test result for that revision.
+
+### 1.3-draggable
+
+- Add dragging, release-to-save confirmation and lock/unlock to the user's working attachment.
+- Preserved in commit `590831eddca23e73993b4f61148f6389ca5fe056`. User supplied the attachment as working.
+
+### 1.2
+
+- Existing fork baseline: start-triggered ability/magic and interruption banners, emphasis, sounds, sizes, coordinates and fixed duration.
