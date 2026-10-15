@@ -1,6 +1,6 @@
 _addon.name = 'finalAlert'
 _addon.author = 'Godchain; A'
-_addon.version = '1.5.0-test2'
+_addon.version = '1.5.0-test3'
 _addon.commands = {'finalAlert', 'fa'}
 
 local config = require('config')
@@ -33,12 +33,15 @@ local primitives = {
     int = 'finalAlert_interrupt', emphasize = 'finalAlert_emphasize',
 }
 local tints = {ma = {218, 183, 199}, ws = {183, 200, 221}, int = {255, 255, 255}}
+local texture_files = {ma = 'background_magic.png', ws = 'background_ability.png',
+    int = 'background_interrupt.png', emphasize = 'background_emphasize.png'}
+local current_textures = {}
 local preview = {
-    {text = 'Casting: Edit Mode', kind = 'ma'},
-    {text = 'Edit Mode', kind = 'ma'},
-    {text = 'Readying: Edit Mode', kind = 'ws'},
-    {text = 'Edit Mode', kind = 'ws'},
-    {text = 'Edit Mode', kind = 'int'},
+    {text = 'Casting: Edit Mode', kind = 'ma', phase = 'preparing'},
+    {text = 'Edit Mode', kind = 'ma', phase = 'finished'},
+    {text = 'Readying: Edit Mode', kind = 'ws', phase = 'preparing'},
+    {text = 'Edit Mode', kind = 'ws', phase = 'finished'},
+    {text = 'Edit Mode', kind = 'int', phase = 'interrupted'},
 }
 local active, editing, drag, retiring
 local created, destroyed = false, false
@@ -131,7 +134,17 @@ local function paint(opacity)
     guide:alpha(opacity)
     caption:show()
     for _, kind in ipairs(kinds) do
-        local tint = tints[kind] or tints[item.kind]
+        -- Only preparation uses the subdued neutral artwork. Execution and
+        -- legacy fixed-duration alerts retain their original bright artwork.
+        local preparing = item.phase == 'preparing'
+        local file = preparing and (kind == 'ma' or kind == 'ws')
+            and 'background_interrupt.png' or texture_files[kind]
+        local path = windower.addon_path .. 'images/' .. settings.background_size .. '/' .. file
+        if current_textures[kind] ~= path then
+            windower.prim.set_texture(primitives[kind], path)
+            current_textures[kind] = path
+        end
+        local tint = preparing and (tints[kind] or tints[item.kind]) or tints.int
         windower.prim.set_color(primitives[kind], opacity, tint[1], tint[2], tint[3])
         windower.prim.set_visibility(primitives[kind], kind == item.kind or
             (kind == 'emphasize' and emphasis))
@@ -147,11 +160,11 @@ local function refresh_backgrounds()
         created = true
     end
     for _, kind in ipairs(kinds) do
-        -- Tint the existing neutral frame instead of multiplying a saturated
-        -- pink/blue texture: this preserves its border and grey gradient.
-        local file = kind == 'emphasize' and 'background_emphasize.png' or 'background_interrupt.png'
+        local file = texture_files[kind]
         windower.prim.set_fit_to_texture(primitives[kind], false)
-        windower.prim.set_texture(primitives[kind], windower.addon_path .. 'images/' .. settings.background_size .. '/' .. file)
+        local path = windower.addon_path .. 'images/' .. settings.background_size .. '/' .. file
+        windower.prim.set_texture(primitives[kind], path)
+        current_textures[kind] = path
     end
     caption:size(math.max(1, 12 * settings.scale))
     guide:size(math.max(1, 9 * settings.scale))

@@ -1,3 +1,32 @@
+# finalAlert — Test 3: restore bright execution artwork
+
+## Current batch — Test 3, 2026-10-15
+
+Version **1.5.0-test3**, branch `finalalert-lifecycle-test1`. Exact published revision is in the packaged `finalAlert/REVISION.txt`. Master is unchanged.
+
+Merge the addon folder, preserve saved settings, then run `//lua reload finalAlert`. The grey **Final Alert** startup still lasts six seconds. Run `//fa` to inspect the cycle:
+
+1. Casting: Edit Mode — subdued grey-pink preparation.
+2. Edit Mode — original brighter magic texture, untinted.
+3. Readying: Edit Mode — subdued grey-blue preparation.
+4. Edit Mode — original brighter ability texture, untinted.
+5. Edit Mode — original grey interrupted texture.
+
+- [ ] Confirm that preview and actual gameplay now show this distinction. Fixed-duration and single test alerts use the original bright artwork too.
+- [ ] Change size/scale during a preparation stage and during an execution stage; the correct artwork should remain selected.
+- [ ] Check that startup, silent preview, dragging and saved positions still behave as before.
+
+Automated checks passed: Lua 5.1 syntax, existing mocked integration suite, and explicit texture/tint assertions for preparation versus execution in the preview and spell/ability event sequences. Live confirmation is pending.
+
+User clarification: original brighter windows should return for execution while the new subdued windows remain for preparation. This supersedes the earlier same-color-for-both-phases plan; earlier records below are retained as history.
+
+| Batch | Revision | Status |
+| --- | --- | --- |
+| Test 3 | 1.5.0-test3; exact source commit in packaged REVISION.txt | Automated checks passed; live confirmation pending. |
+| Test 2 source | df95d2dfe1e3cdc4683f221ba3cac813c951c86c | Six-second startup; earlier delivery preserved below. |
+
+---
+
 # finalAlert — Test 2: six-second startup
 
 ## Current batch — Test 2, 2026-10-15

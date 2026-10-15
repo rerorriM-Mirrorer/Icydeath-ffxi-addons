@@ -108,10 +108,17 @@ equal(#c.sounds,0)
 c:tick(5.99);check(c.caption.is_visible)
 c:tick(0.01);check(not c.caption.is_visible)
 c:command();equal(c.caption.content,'Casting: Edit Mode');check(c.guide.is_visible)
+check(c.prims.finalAlert_magic.texture:match('background_interrupt.png$'))
+check(c.prims.finalAlert_magic.color[2]>c.prims.finalAlert_magic.color[3])
 check(c.help_colors[140] and c.help_colors[167] and c.help_colors[200] and c.help_colors[207] and c.help_colors[0])
 c:tick(1.5);equal(c.caption.content,'Edit Mode');check(c.prims.finalAlert_magic.visible)
+check(c.prims.finalAlert_magic.texture:match('background_magic.png$'))
+for i=2,4 do equal(c.prims.finalAlert_magic.color[i],255) end
 c:tick(1.5);equal(c.caption.content,'Readying: Edit Mode');check(c.prims.finalAlert_ability.visible)
+check(c.prims.finalAlert_ability.texture:match('background_interrupt.png$'))
 c:tick(1.5);equal(c.caption.content,'Edit Mode');check(c.prims.finalAlert_ability.visible)
+check(c.prims.finalAlert_ability.texture:match('background_ability.png$'))
+for i=2,4 do equal(c.prims.finalAlert_ability.color[i],255) end
 c:tick(1.5);check(c.prims.finalAlert_interrupt.visible)
 c:tick(1.5);equal(c.caption.content,'Casting: Edit Mode')
 local pink=c.prims.finalAlert_magic.color
@@ -155,10 +162,13 @@ local preparation_tint=c.prims.finalAlert_magic.color
 c:tick(4);check(c.caption.is_visible) -- not fixed-mode 3s
 c:action(4,2);equal(c.caption.content,'Casting: Fire') -- stale finish ignored
 c:action(4,1);equal(c.caption.content,'Fire')
-for i=2,4 do equal(c.prims.finalAlert_magic.color[i],preparation_tint[i]) end
+check(c.prims.finalAlert_magic.texture:match('background_magic.png$'))
+for i=2,4 do equal(c.prims.finalAlert_magic.color[i],255) end
+check(preparation_tint[3]<255)
 c:tick(0.75);c:action(4,1);c:tick(0.3);check(not c.caption.is_visible) -- duplicate doesn't extend
 c:action(7,300);equal(c.caption.content,'Readying: Self-Destruct')
 c:action(11,300);equal(c.caption.content,'Self-Destruct');check(c.prims.finalAlert_ability.visible)
+check(c.prims.finalAlert_ability.texture:match('background_ability.png$'))
 c:tick(1.1);check(not c.caption.is_visible)
 c:action(7,42);equal(c.caption.content,'Readying: Blade: Ten')
 c:action(3,42);equal(c.caption.content,'Blade: Ten')

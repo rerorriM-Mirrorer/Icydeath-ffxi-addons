@@ -1,6 +1,6 @@
 # finalAlert
 
-Godchain's Windower alert banner, developed with A. Version **1.5.0-test2**.
+Godchain's Windower alert banner, developed with A. Version **1.5.0-test3**.
 
 Shows the selected NPC's spell and ability preparations, interruptions, and—optionally—execution events. If the selected target is not an NPC, the battle target is used when available.
 
@@ -20,7 +20,7 @@ On load/reload, a silent grey banner reads **Final Alert** for six seconds, inde
 
 Defaults: fixed duration **3 seconds**, completion/interruption display **1 second**, preparation timeout **30 seconds**. Durations accept positive finite values, including fractions; there are no arbitrary upper caps. Changes are saved. Changing a duration affects subsequent alerts, not a currently running deadline.
 
-The same muted grey-pink frame is used for magic preparation and execution. Ability preparation and execution share a muted grey-blue frame. Both reuse the original neutral frame's artwork with runtime tinting; interruption remains untinted grey. Text stays white. Emphasized names retain their extra highlight.
+Preparation uses a muted grey-pink frame for magic and a muted grey-blue frame for abilities, tinting the original neutral artwork. Execution restores the original brighter magic/ability artwork, without a tint. Fixed-duration alerts and single tests also retain the original bright artwork. Interruption remains untinted grey. Text stays white; emphasized names retain their extra highlight.
 
 ## Edit and preview
 
@@ -29,9 +29,9 @@ The same muted grey-pink frame is used for magic preparation and execution. Abil
 The silent preview cycles every 1.5 seconds:
 
 1. `Casting: Edit Mode` — grey-pink magic frame.
-2. `Edit Mode` — same magic frame.
+2. `Edit Mode` — original brighter magic frame.
 3. `Readying: Edit Mode` — grey-blue ability frame.
-4. `Edit Mode` — same ability frame.
+4. `Edit Mode` — original brighter ability frame.
 5. `Edit Mode` — grey interruption frame.
 
 Drag either the frame or its caption. The cycle pauses while held; release saves the banner position and resumes the cycle after a full preview interval. `//fa edit`, `//fa edit on`, and `//fa edit off` also control the preview. Repeating explicit `on`/`off` commands is safe.
@@ -79,6 +79,12 @@ lua finalAlert/tests/test_finalalert.lua
 Automated verification is not live FFXI testing. Confirm the palette, smooth dragging, actual monster finish/interruption events, and low-resolution layout in game before promoting the working branch. Some actions may not emit every expected event; fallback and finish-without-start handling address that uncertainty without inventing completion.
 
 ## Cumulative changelog
+
+### 1.5.0-test3
+
+- Restore original untinted magic/ability textures for execution, fixed-duration alerts and single tests. Keep the subdued pink/blue neutral frames during preparation.
+- Make preview entries explicit preparation/execution states so they use the same artwork selection as gameplay. The interrupted preview and six-second startup remain grey.
+- Verify texture selection and tint reset across preview cycles and live-event simulations, including size/scale refresh.
 
 ### 1.5.0-test2
 
