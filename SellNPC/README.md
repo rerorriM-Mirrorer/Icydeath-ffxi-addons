@@ -6,7 +6,7 @@ The optional batch now explains every step in **BattleMod-style colored game cha
 
 The batch **remembers the merchant selected at the start**. Clearing or changing the player's current target no longer interrupts a batch. The remembered NPC must still exist with the same ID and index in the same zone, and remain within interaction range. SellNPC never adopts a new target during a run. Be sure to target an ordinary vendor when starting.
 
-**Bags remain strictly Inventory, Satchel, Sack, Case**. No Wardrobes, Safe, Storage or Locker retrieval. `junk` now contains **266 unique names**, including newly selected `Papaka Grass`, `Shell Bug`, and `Silk Thread`. Those items can have quest/crafting uses, but are deliberately in this personal selling profile.
+**Bags remain strictly Inventory, Satchel, Sack, Case**. No Wardrobes, Safe, Storage or Locker retrieval. `junk` now contains **262 unique names**, including newly selected `Papaka Grass`, `Shell Bug`, and `Silk Thread`. Those items can have quest/crafting uses, but are deliberately in this personal selling profile.
 
 For a cautious live test, make sure a prior batch is finished, reload SellNPC, then run:
 
@@ -16,7 +16,7 @@ For a cautious live test, make sure a prior batch is finished, reload SellNPC, t
 //sellnpc status
 ```
 
-The code passes offline Lua simulations including target changes and action-by-action messages; **this revision has not yet been verified in live FFXI**. The previous Beta 2 showed real sales, but a target-change interruption. See [TESTING.md](TESTING.md) for cumulative results. Do not reload while a batch is active or interfere with another item's automatic transfers.
+The code passes offline Lua simulations including target changes and action-by-action messages. The user has since reported that the new batching works beautifully in-game; the four-item profile cleanup is **new and not separately live-tested**. Beta 2 previously showed a target-change interruption. See [TESTING.md](TESTING.md) for cumulative results. Do not reload while a batch is active or interfere with another item's automatic transfers.
 
 
 ### Command Usage:
@@ -62,6 +62,8 @@ This is real, irreversible selling — **`batch` is not a dry-run**. Unlike `pre
 **Start with `//sellnpc preview Animal Glue`, then `//sellnpc batch Animal Glue`**, and check the real results before using the entire junk profile. See `TESTING.md` for live acceptance checks and known limits.
 
 ### Changelog
+
+- **2026-11-02 (profile cleanup, live check pending):** Removed four NPC-unsellable entries (Goblin Helm/Mail/Mask and Dhalmel Saliva), 266 → 262 `junk` entries. No SellNPC.lua behavior or storage scope changed. User reports the preceding batch implementation worked beautifully in-game.
 
 - **2026-11-01 (Beta 3 working branch, live test pending):** Action-by-action colored chat, stable saved-merchant guard, and Papaka Grass, Shell Bug, Silk Thread in `junk`. No changes to sequential sale pacing or accessible bags.
 
