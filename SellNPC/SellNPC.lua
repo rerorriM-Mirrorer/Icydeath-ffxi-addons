@@ -1,7 +1,7 @@
 -- SellNPC: original single-shot selling retained; optional, confirmation-driven
 -- batches retrieve profile items from portable storage before each shop pass.
 _addon.command = 'SellNPC'
-_addon.version = '2.1.0-beta.2'
+_addon.version = '2.1.0-beta.3'
 _addon.author = 'Ivaar (batch extensions by A)'
 _addon.name = 'SellNPC'
 
