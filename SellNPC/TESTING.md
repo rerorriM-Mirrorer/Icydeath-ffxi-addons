@@ -1,6 +1,39 @@
 # SellNPC — TESTING.md
 
-## Current Development Status — November 1, 2026 (America/Chicago)
+## Current Development Status — November 1, 2026 (Beta 2, America/Chicago)
+
+- **Repository / branch:** `rerorriM-Mirrorer/Icydeath-ffxi-addons` / `sellnpc/batch-verified-sales-2026-11-01`. Working branch branched from `sellnpc/junk-profile-inventory-2026-11-01`; `master` untouched.
+- **Source baseline:** existing `SellNPC/SellNPC.lua` blob `1fc7e771e987c5f999d65b41588afc37c6c6d346` (Ivaar v2.0.0.0), existing 263-name `junk` profile blob `a718748692dc62db90e0d2b48b0db0712a539f64`.
+- **Scope:** one-character optional profile or single-item batch, preview/status/stop, Satchel/Sack/Case retrieval into Inventory via `windower.ffxi.move_item`, guarded NPC interaction and sequential vendor sale with acknowledgement and Inventory-change checks. Legacy single-shot queue unchanged in intent; no NPCMirror IPC added.
+- **Runtime:** Windower 4 / FFXI **not tested** on actual clients. Companion Itemizer/NPCMirror runtime versions **not required** for this beta; their code was consulted. Real shop availability and automatic repeated pass behavior still need acceptance testing.
+- **Offline static/simulation:** source parsed under `texlua --luaonly` (Lua 5.3 engine, not a Lua 5.1-specific parse); `tests/batch_sim.lua` passed simulated multi-pass move/sell, preview, single-item scope, legacy queue, timeouts for no move/no sale/no shop, stop, zoning, and target guards. Windower APIs and server packets were mocked, so these are not in-game outcomes.
+- **Known uncertainties:** Whether moving items while a shop menu is open succeeds; how a vendor menu behaves after an individual `0x085`; how target state behaves on all merchant types; whether each live `0x03D` sale response consistently matches the parsed inventory index. If not, this code should stop instead of blindly retrying.
+- **Safety/compatibility:** SellNPC batch includes only main Inventory and portable Satchel(5), Sack(6), Case(7); never Wardrobes or GearSwap equip bags. Reserves two free Inventory slots, limits to twelve retrieved stacks per pass. Only one move/sale in flight. On timeout, zoning, target change, logout, or stop it cancels new actions but cannot reverse packets already sent. Existing junk profile still contains crystals and older choices.
+- **Next live step:** Target one ordinary merchant while idle and run `//sellnpc preview Animal Glue`, then `//sellnpc batch Animal Glue` with one small stack. Verify sale response/inventory change, then two storage stacks and multiple passes. Do not start with the entire `junk` profile.
+
+### Beta 2 live acceptance checklist (not yet performed)
+
+1. Load the exact working-branch files and check no addon load error or unrelated gear movement.
+2. `//sellnpc preview Animal Glue`: confirms Inventory/Satchel/Sack/Case totals, no packets or inventory movement.
+3. Put one small stack in Inventory, target a nearby vendor, run `//sellnpc batch Animal Glue`: verify one sale confirmation and expected Gil/item changes.
+4. Put a second Animal Glue stack into Satchel; run the same batch and confirm the transfer actually completes before sale.
+5. Repeat with two or more stored stacks and fewer than twelve free Inventory slots; observe the shop lifecycle between passes.
+6. Try `//sellnpc stop` while waiting to sell/move; confirm no new requests are started. Test wrong target, zoning, and NPC not responding.
+7. With MogMover and GearSwap enabled, confirm no item bouncing or unrelated storage transfers; disable conflicting mappings for initial tests.
+8. Only then consider `//sellnpc batch junk`; remember it includes all pre-existing 263 eligible profile types, some of which can be valuable elsewhere.
+
+### 2026-11-01 — Batch controller development (offline verified)
+
+- `SellNPC/SellNPC.lua`: state machine for one move/sale at a time, valid merchant identity/zone, shop entry, timeouts, and server sale acknowledgement before continuing.
+- `SellNPC/tests/batch_sim.lua`: deterministic Lua simulation with mocked packet and inventory APIs.
+- `SellNPC/README.md`: current commands, storage scope, live test precautions.
+- `SellNPC/docs/PACKETS.md`: protocol references and unverified assumptions.
+- **Not performed:** in-game FFXI testing, actual storage transfers or Gil sales, NPCMirror multi-character orchestration.
+
+---
+
+
+## Previous Development Status — November 1, 2026 (inventory-curation batch)
 
 - **Repository / working branch:** `rerorriM-Mirrorer/Icydeath-ffxi-addons` / `sellnpc/junk-profile-inventory-2026-11-01`.
 - **Source baseline:** `master`, `SellNPC/profiles.lua` blob `06f3d8d3ebea069c482bfea011b7aafbb89bc702`. The original `master` branch has not been modified for this batch.
