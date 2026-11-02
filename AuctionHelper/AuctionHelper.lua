@@ -412,9 +412,9 @@ end
 function ah_proposal(bid, item_name, vol, price)
     if not windower.ffxi.get_player() then return end
     local item = get_item_res(item_name)
-    if not item then print('AH Error: %s not a valid item name.':format(item_name)) return false end
+    if not item then ah_message('Item', item_name .. ' was not found.') return false end
     
-    if item.flags['No Auction'] == true then print(item.flags) return false end
+    if item.flags['No Auction'] == true then ah_message('Item', item.en .. ' cannot be traded on the Auction House.') return false end
 
     local single
     if vol == 'auto' or vol == nil then
@@ -437,15 +437,15 @@ function ah_proposal(bid, item_name, vol, price)
         trans = trans..string.char(0x0E,slot,0,0, (price%256), (math.floor((price/256)%256)), (math.floor((price/65536)%256)), (math.floor((price/16777216)%256)), (item.id%256), (math.floor((item.id/256)%256)),0,0)
         --print('%s "%s" %s %s ID:%s':format(bid, item.en, comma_value(price),single == 1 and '[Single]' or '[Stack]',item.id))
     elseif bid == 'sell' and price and tonumber(price) <= 999999999 then
-        if not auction_box then print('AH Error: Click auction counter or use /ah to initialize sales.') return	end
-        if not find_empty_slot() then print('AHPack Error: No Empty Slots Available.') return end
+        if not auction_box then ah_message('Sell', 'Open the Auction House to initialize sales first.') return	end
+        if not find_empty_slot() then ah_message('Sell', 'No empty sales slots available.') return end
         trans = trans.. string.char(0x04,0,0,0, (price%256), (math.floor((price/256)%256)), (math.floor((price/65536)%256)), (math.floor((price/16777216)%256)))
         local index = find_item(item.id, single == 1 and single or item.stack, item.max_charges)
         if not index then print('AH Error: %s of %s not found in inventory.':format(single == 1 and 'Single' or 'Stack',item.en)) return end
         trans = trans..string.char((index%256), (math.floor((index/256)%256)), (item.id%256), (math.floor((item.id/256)%256)))
         --print('%s "%s" %s %s ID:%s Ind:%s':format(bid, item.en, comma_value(price),single == 1 and '[Single]' or '[Stack]',item.id,index))
     else
-        print('AH Error: Invalid price.')
+        ah_message('Price', 'Invalid price or insufficient gil.')
         return false 
     end
     
