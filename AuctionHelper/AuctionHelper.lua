@@ -311,15 +311,15 @@ function bazaar_item(item_name,price)
     if not windower.ffxi.get_player() then return end
     local item = get_item_res(item_name)
     if not item then 
-        print('AH Error: %s not a valid item name.':format(item_name)) 
+        ah_message('Item', item_name .. ' was not found.') 
         return false
     end
     if item.flags['No PC Trade'] == true or item.flags['Linkshell'] == true then 
-        print(item.flags)
+        ah_message('Bazaar', item.en .. ' cannot be placed in a bazaar.')
         return false
     end
     price = format_price(price)
-    if not price or price > 99999999 then print('AH Error: Invalid price.') return false end
+    if not price or price > 99999999 then ah_message('Price', 'Invalid bazaar price.') return false end
     actions = true
     for ind,inv_item in ipairs(windower.ffxi.get_items(0)) do
         if inv_item and inv_item.id == item.id and (inv_item.status == 0 or inv_item.status == 25) then
@@ -460,7 +460,7 @@ function stack_conv()
         single = 0
     elseif vol == '0' or vol == 'single' then
         single = 1
-    else print('AH Error: Specify Stack or Single') return false end
+    else ah_message('Item', 'Specify single or stack.') return false end
 end    
 
 function ah_proposal(bid, item_name, vol, price)
@@ -495,7 +495,7 @@ function ah_proposal(bid, item_name, vol, price)
         if not find_empty_slot() then ah_message('Sell', 'No empty sales slots available.') return end
         trans = trans.. string.char(0x04,0,0,0, (price%256), (math.floor((price/256)%256)), (math.floor((price/65536)%256)), (math.floor((price/16777216)%256)))
         local index = find_item(item.id, single == 1 and single or item.stack, item.max_charges)
-        if not index then print('AH Error: %s of %s not found in inventory.':format(single == 1 and 'Single' or 'Stack',item.en)) return end
+        if not index then ah_message('Sell', string.format('%s of %s not in inventory.', single == 1 and 'Single' or 'Stack',item.en)) return end
         trans = trans..string.char((index%256), (math.floor((index/256)%256)), (item.id%256), (math.floor((item.id/256)%256)))
         --print('%s "%s" %s %s ID:%s Ind:%s':format(bid, item.en, comma_value(price),single == 1 and '[Single]' or '[Stack]',item.id,index))
     else
