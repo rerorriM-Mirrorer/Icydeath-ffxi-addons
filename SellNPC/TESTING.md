@@ -1,6 +1,25 @@
 # SellNPC — TESTING.md
 
-## Current Development Status — November 1, 2026 (Beta 2, America/Chicago)
+## Current Development Status — November 1, 2026 (first live observations, America/Chicago)
+
+- **Branch / code under live review:** `rerorriM-Mirrorer/Icydeath-ffxi-addons` / `sellnpc/batch-verified-sales-2026-11-01`; initial Beta 2 implementation commit `da7c6d1d4c3777f77b867ad474fabea0ad028277`; target-guard adjustment commit `00fca3e392a80646b8682fcb695a75cbf7fd1b0d`. No SellNPC code change made in this log-analysis update.
+- **Live evidence:** User reported "it seems to be working awesome", supplied `Cioara_2026.11.01.log`, and tested on Cioara at NPC merchant **Rhimonne** (Lower Jeuno). This is first actual FFXI usage evidence, unlike the previous simulation-only checkpoint. The transcript has **no final completion summary** for the second batch.
+- **First batch:** `preview junk` reported **219 units / 48 stacks**: Inventory 0, Satchel 0, Sack 2 units / 2 stacks, Case 217 units / 46 stacks. `batch junk` started with those values, then logged **"Stopped: target changed during vendor batch: moved 11 stacks, confirmed sold 0 items (0 stacks)."** The target-change guard may be stricter than necessary, but no packet trace yet establishes why the target changed.
+- **Legacy behavior after stop:** An old-style `junk` queue was loaded; chat recorded "Selling 70 items" and vendor sale messages. Distinguish these from the subsequent batch's verified activity. An earlier old-style sale logged "Selling 47 items."
+- **Second batch:** `batch junk` began with **149 units / 36 stacks**. Subsequently the chat log recorded **12 vendor sale messages**, representing **29 units** (Yagudo feathers, cloth, beehive chips, black tiger fang, wolf hide, wild onion, sheepskins, copper ore, ice crystals, grass thread, bone chip). These are user-observed FFXI chat sales, not proof of completion or an audited Gil total. File ended immediately after the bone chip sale; no batch completion, status, or stop message appears.
+- **Profile warnings:** Four entries are reported NPC-unsellable: `Goblin Mail`, `Goblin Mask`, `Dhalmel Saliva`, `Goblin Helm`. Do not automatically revise the user's original profile without review.
+- **Assessment:** **Partial live success observed** — real bag retrieval was reported (11 stacks) and real vendor sales were observed during the second batch. Full unattended multi-pass completion **not yet verified**. The target-mismatch stop is a specific issue to investigate before calling this stable.
+- **Next:** Request/capture `//sellnpc status` during and after a run, and a follow-up log showing final completion or interruption. Correlate an unexpected target change with shop-open state. Avoid editing or reloading an actively selling client; isolate any target-guard adjustment in a subsequent test build.
+
+### 2026-11-01 — User live log review and findings
+
+- **Evidence:** `Cioara_2026.11.01.log` lines ~26274–26327, provided in ChatGPT conversation after first Beta 2 test.
+- **No new code edits, runtime simulations, or live game tests performed by the assistant** during this review. Reviewed log text and the published `SellNPC.lua` target guard.
+- **Previous "Windower / FFXI not tested" status below is historical and now superseded in part** by the user's actual in-game observations above. Packet semantics, sale-ack matching, inventory delta confirmation, full completion, and NPCMirror interaction remain unverified individually.
+
+---
+
+## Previous Development Status — November 1, 2026 (Beta 2 before live testing, America/Chicago)
 
 - **Repository / branch:** `rerorriM-Mirrorer/Icydeath-ffxi-addons` / `sellnpc/batch-verified-sales-2026-11-01`. Working branch branched from `sellnpc/junk-profile-inventory-2026-11-01`; `master` untouched.
 - **Source baseline:** existing `SellNPC/SellNPC.lua` blob `1fc7e771e987c5f999d65b41588afc37c6c6d346` (Ivaar v2.0.0.0), existing 263-name `junk` profile blob `a718748692dc62db90e0d2b48b0db0712a539f64`.
