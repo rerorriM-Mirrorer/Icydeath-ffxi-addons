@@ -314,9 +314,9 @@ windower.register_event('incoming chunk', function(id, original, modified, injec
             end
         elseif packet['Type'] == 0x0E then
             if original:byte(7) == 1 then
-                windower.add_to_chat(207, 'Bid Success')
+                ah_message('Bid', 'Successful.')
             elseif original:byte(7) == 0xC5 then
-                windower.add_to_chat(207, 'Bid Failed')
+                ah_message('Bid', 'Unsuccessful. Try //ah bid <price> with a higher amount.')
             end
         end
     end
