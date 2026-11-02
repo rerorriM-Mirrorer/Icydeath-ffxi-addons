@@ -4,7 +4,7 @@ local fake_time = 1000
 os.time = function() return fake_time end
 local function scenario(label, data, opts)
     opts = opts or {}
-    local events, queued, messages, moves, sales = {}, {}, {}, {}, {}
+    local events, queued, messages, moves, sales, channels = {}, {}, {}, {}, {}, {}
     local char = {status=0}
     local zone=100
     local mob={id=12345,index=110,name='Test Vendor',distance=5}
@@ -23,7 +23,7 @@ local function scenario(label, data, opts)
     _G._addon={}
     _G.windower={
         addon_path='/tmp/test/',
-        add_to_chat=function(_,s) messages[#messages+1]=s end,
+        add_to_chat=function(ch,s) channels[#channels+1]=ch; messages[#messages+1]=s end,
         convert_auto_trans=function(s) return s end,
         register_event=function(ev,fn)
             if type(ev)~='string' then error('bad event') end
@@ -68,8 +68,9 @@ local function scenario(label, data, opts)
             end
         end}
     }
-    package.loaded['resources']=nil;package.loaded['profiles']=nil;package.loaded['packets']=nil;package.loaded['sets']=nil
+    package.loaded['resources']=nil;package.loaded['profiles']=nil;package.loaded['packets']=nil;package.loaded['sets']=nil;package.loaded['chat']=nil
     package.preload['sets']=function() return {} end
+    package.preload['chat']=function() string.color=function(s,col) return ('<%d>%s</>'):format(col,s) end;return {} end
     package.preload['resources']=function()return {items={
         [1]={id=1,en='Animal Glue',enl='Animal Glue',flags={}},
         [2]={id=2,en='Bat Wing',enl='Bat Wing',flags={}},
@@ -91,10 +92,11 @@ local function scenario(label, data, opts)
         end
     end
     local function advance(sec) fake_time=fake_time+sec end
-    return {cmd=cmd,pump=pump,advance=advance,base=base,moves=moves,sales=sales,messages=messages,
+    return {cmd=cmd,pump=pump,advance=advance,base=base,moves=moves,sales=sales,messages=messages,channels=channels,
         shop=function()invoke('incoming chunk',0x03C,'',nil,false,false) end,
         get_target=function()return target end,set_target=function(m)target=m end,
-        set_zone=function(z)zone=z;invoke('zone change') end}
+        set_zone=function(z)zone=z;invoke('zone change') end,
+        set_distance=function(dist)mob.distance=dist end}
 end
 local function contains(lines,needle)
  for _,s in ipairs(lines) do if s:find(needle,1,true) then return true end end
@@ -111,6 +113,18 @@ a.cmd('batch','junk');a.pump(300)
 assert(#a.sales==6, 'expected 6 sales, got '..#a.sales)
 assert(#a.moves==5,'expected 5 retrievals')
 assert(contains(a.messages,"Completed: moved 5 stacks, confirmed sold 33 items (6 stacks)."))
+assert(contains(a.messages,'Retrieving 5 x Animal Glue from Satchel'))
+assert(contains(a.messages,'Retrieved 5 x Animal Glue from Satchel'))
+assert(contains(a.messages,'Opening shop with Test Vendor'))
+assert(contains(a.messages,'Shop response received from Test Vendor'))
+assert(contains(a.messages,'Selling 2 x Bat Wing to Test Vendor'))
+assert(contains(a.messages,'Confirmed 2 x Bat Wing sold to Test Vendor'))
+assert(contains(a.messages,'Checking storage for more.'))
+assert(contains(a.messages,'<167>SellNPC</>') and contains(a.messages,'<200>-></>'), 'color formatting missing')
+for _,channel in ipairs(a.channels) do assert(channel==0, 'messages must use chat mode 0') end
+local menu=scenario('help',{inv={{id=1,count=2,status=0}}})
+menu.cmd('help')
+assert(contains(menu.messages,'<140>-------- </>') and contains(menu.messages,'<200>//sellnpc</>'))
 local b=scenario('no ack',{inv={{id=1,count=4,status=0}}},{no_ack=true})
 b.cmd('batch','junk');b.pump(12);b.advance(10);b.pump(40)
 assert(contains(b.messages,'Stopped: NPC sale confirmation or inventory update missing'))
@@ -136,9 +150,16 @@ local h=scenario('unknown target',{inv={{id=1,count=3,status=0}}})
 h.set_target(nil);h.cmd('batch','junk');h.pump(10)
 assert(contains(h.messages,'Target a nearby NPC vendor first.'))
 local k=scenario('target changed mid-run',{satchel={{id=1,count=4,status=0}}})
-k.cmd('batch','junk');k.set_target({id=999,index=111,name='Wrong Vendor',distance=5});k.pump(30)
-assert(contains(k.messages,'target changed during vendor batch') and #k.moves==0)
+k.cmd('batch','junk');k.set_target({id=999,index=111,name='Wrong Vendor',distance=5});k.pump(100)
+assert(#k.moves==1 and #k.sales==1, 'target change should not cancel: saved NPC remains nearby')
+assert(not contains(k.messages,'target changed during vendor batch'))
+local k2=scenario('target cleared mid-run',{satchel={{id=1,count=4,status=0}}})
+k2.cmd('batch','junk');k2.set_target(nil);k2.pump(100)
+assert(#k2.sales==1,'target can be cleared while the original vendor remains nearby')
+local k3=scenario('saved merchant out of range',{satchel={{id=1,count=4,status=0}}})
+k3.cmd('batch','junk');k3.set_distance(50);k3.pump(30)
+assert(#k3.moves==0 and #k3.sales==0 and contains(k3.messages,'out of range'))
 local j=scenario('single-name scope',{inv={{id=1,count=3,status=0},{id=2,count=6,status=0}}})
 j.cmd('batch','Animal','Glue');j.pump(100)
 assert(#j.sales==1 and j.sales[1].id==1, 'batch item should not sell bat wing')
-print('SIMULATION PASS: preview, multi-pass move/sell, legacy queue, one-item scope, timeouts, stop, zone and target guards')
+print('SIMULATION PASS: BattleMod chat, per-stack progress, help, preview, multi-pass move/sell, legacy, single-name, timeouts, stop, zone and saved-vendor guards')
