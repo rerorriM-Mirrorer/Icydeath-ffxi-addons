@@ -1,11 +1,12 @@
 -- SellNPC: original single-shot selling retained; optional, confirmation-driven
 -- batches retrieve profile items from portable storage before each shop pass.
 _addon.command = 'SellNPC'
-_addon.version = '2.1.0-beta.1'
+_addon.version = '2.1.0-beta.2'
 _addon.author = 'Ivaar (batch extensions by A)'
 _addon.name = 'SellNPC'
 
 require('sets')
+require('chat') -- Windower color-formatting helpers (string.color).
 local packets = require('packets')
 local resources = require('resources')
 local profiles = require('profiles')
@@ -23,8 +24,18 @@ local MOVE_TIMEOUT = 8
 local SALE_TIMEOUT = 8
 local SHOP_TIMEOUT = 10
 
-local function say(msg)
-    windower.add_to_chat(207, 'SellNPC: ' .. msg)
+-- BattleStations/BattleMod-style chat output: colored addon heading, arrow,
+-- optional action cue, then neutral message text. All output goes to game chat.
+local function say(msg, action)
+    local prefix = string.color('SellNPC', 167) .. ' ' .. string.color('->', 200) .. ' '
+    if action then prefix = prefix .. string.color('[' .. action .. ']', 207) .. ' ' end
+    windower.add_to_chat(0, prefix .. msg)
+end
+
+local function item_description(id, count)
+    local item = res_items[id]
+    local name = (item and item.en) or ('item #' .. tostring(id))
+    return ('%d x %s'):format(count, name)
 end
 
 local function now()
@@ -145,11 +156,11 @@ local function preview(profile_name)
     if not profile then say('Unknown profile/item "' .. tostring(profile_name) .. '".'); return end
     local allowed, invalid, unvendable = allowed_items(profile)
     local count = count_profile(allowed)
-    say(('Preview "%s": %d items in %d stacks across accessible bags.'):format(profile_name, count.units, count.stacks))
+    say(('Preview "%s": %d items in %d stacks across accessible bags.'):format(profile_name, count.units, count.stacks), 'Preview')
     for _, id in ipairs({0, 5, 6, 7}) do
         if count.by_bag[id] then
             local stat = count.by_bag[id]
-            say(('  %s: %d items / %d stacks'):format(BAG_NAMES[id], stat.units, stat.stacks))
+            say(('  %s: %d items / %d stacks'):format(BAG_NAMES[id], stat.units, stat.stacks), 'Preview')
         end
     end
     if invalid + unvendable > 0 then
@@ -163,7 +174,8 @@ local function cancel(reason)
     local s = batch
     batch = nil -- Any delayed tick or packet callback now becomes inert.
     say(('%s: moved %d stacks, confirmed sold %d items (%d stacks).'):format(
-        reason, s.moved_stacks, s.sold_units, s.sold_stacks))
+        reason, s.moved_stacks, s.sold_units, s.sold_stacks),
+        reason == 'Completed' and 'Done' or 'Stop')
 end
 
 local function valid_merchant(s)
@@ -175,10 +187,9 @@ local function valid_merchant(s)
     if not npc or npc.index ~= s.npc_index or npc.distance == nil or npc.distance > 36 then
         return false, 'merchant unavailable, changed or out of range'
     end
-    local selected = windower.ffxi.get_mob_by_target('t')
-    if selected and selected.id ~= s.npc_id then
-        return false, 'target changed during vendor batch'
-    end
+    -- The NPC was captured at batch start. Menus can clear or change <t>;
+    -- the batch continues only while that SAME NPC remains nearby in-zone.
+    -- Do not follow or silently adopt a new target.
     return true
 end
 
@@ -199,6 +210,8 @@ local function start_sale(s, index, item)
     if count > 65535 then cancel('Stopped: unsupported stack size'); return end
     s.pending = {kind='sale', id=item.id, slot=index, count=count, time=now(), ack=false}
     s.phase = 'waiting_sale'
+    say(('Selling %s to %s (Inventory slot %d); awaiting confirmation.'):format(
+        item_description(item.id, count), s.npc_name, index), 'Sell')
     -- Existing Ivaar sale request/confirm pair, now strictly one in flight.
     windower.packets.inject_outgoing(0x084, string.char(
         0x84, 0x06, 0, 0, count % 256, math.floor(count / 256) % 256, 0, 0,
@@ -216,6 +229,8 @@ local function start_move(s, bag_id, index, item)
     s.pending = {kind='move', bag=bag_id, id=item.id, count=item.count,
         from=total_in_bag(bag_id, item.id), into=total_in_bag(0, item.id), time=now()}
     s.phase = 'waiting_move'
+    say(('Retrieving %s from %s slot %d into Inventory.'):format(
+        item_description(item.id, item.count), BAG_NAMES[bag_id], index), 'Move')
     local ok, result = pcall(windower.ffxi.move_item, bag_id, 0, index, item.count)
     if not ok or result == false then
         cancel('Stopped: Itemizer-style inventory movement failed')
@@ -231,14 +246,12 @@ local function ask_shop(s)
         cancel('Stopped: not idle to interact with merchant')
         return
     end
-    local selected = windower.ffxi.get_mob_by_target('t')
-    if not selected or selected.id ~= s.npc_id then
-        cancel('Stopped: selected target no longer matches merchant')
-        return
-    end
+    -- Reopen the originally selected vendor even when the player's current
+    -- target changes. valid_merchant has already verified its ID/index/range.
     s.shop_seen = false
     s.phase = 'waiting_shop'
     s.shop_time = now()
+    say(('Opening shop with %s; waiting for merchant response.'):format(s.npc_name), 'Shop')
     local ok = pcall(function()
         packets.inject(packets.new('outgoing', 0x01A, {
             ['Target'] = s.npc_id, ['Target Index'] = s.npc_index, ['Category'] = 0,
@@ -257,6 +270,9 @@ local function tick(s)
         if m.from - from >= m.count and into - m.into >= m.count then
             s.moved_stacks = s.moved_stacks + 1
             s.pulls_this_pass = s.pulls_this_pass + 1
+            say(('Retrieved %s from %s (%d stack%s moved this batch).'):format(
+                item_description(m.id, m.count), BAG_NAMES[m.bag],
+                s.moved_stacks, s.moved_stacks == 1 and '' or 's'), 'Move')
             s.pending = nil
             s.phase = 'fetching'
         elseif now() - m.time >= MOVE_TIMEOUT then
@@ -273,6 +289,8 @@ local function tick(s)
             local sold = m.count - remaining
             s.sold_units = s.sold_units + sold
             s.sold_stacks = s.sold_stacks + 1
+            say(('Confirmed %s sold to %s (%d units / %d stacks total).'):format(
+                item_description(m.id, sold), s.npc_name, s.sold_units, s.sold_stacks), 'Sold')
             s.pending = nil
             s.phase = 'selling'
         elseif now() - m.time >= SALE_TIMEOUT then
@@ -293,6 +311,8 @@ local function tick(s)
         if b and free > FREE_SLOTS_RESERVED and s.pulls_this_pass < MAX_PULLS_PER_PASS then
             start_move(s, b, index, item)
         elseif inv_index then
+            say(('Retrieval pass ready (%d stacks moved so far). Preparing merchant sales.'):format(
+                s.moved_stacks), 'Batch')
             s.phase = 'ready_to_shop'
         elseif b then
             cancel('Stopped: need free Inventory slots to retrieve remaining junk')
@@ -302,7 +322,10 @@ local function tick(s)
         return
     end
     if s.phase == 'ready_to_shop' then
-        if s.shop_seen then s.phase = 'selling'
+        if s.shop_seen then
+            say(('Merchant %s ready. Selling eligible Inventory stacks one by one.'):format(
+                s.npc_name), 'Shop')
+            s.phase = 'selling'
         else ask_shop(s) end
         return
     end
@@ -311,6 +334,8 @@ local function tick(s)
         if index then
             start_sale(s, index, item)
         else
+            say(('Inventory sales pass finished (%d units confirmed). Checking storage for more.'):format(
+                s.sold_units), 'Batch')
             s.pulls_this_pass = 0
             s.phase = 'fetching'
         end
@@ -348,8 +373,9 @@ local function start_batch(profile_name)
         npc_index=target.index, npc_name=target.name or 'NPC', zone=info.zone,
         moved_stacks=0, sold_stacks=0, sold_units=0, phase='fetching',
         pulls_this_pass=0, shop_seen=false}
-    say(('Batch "%s" started at %s (%d items across %d stacks).'):format(
-        profile_name, batch.npc_name, count.units, count.stacks))
+    say(('Batch "%s" started with %s (%d items in %d stacks).'):format(
+        profile_name, batch.npc_name, count.units, count.stacks), 'Batch')
+    say('Scope: Inventory, Satchel, Sack, Case. One transfer or sale at a time; //sellnpc stop cancels future actions.', 'Batch')
     if invalid + unvendable > 0 then
         say(('Skipped %d unrecognized and %d NPC-unsellable profile entries.'):format(invalid, unvendable))
     end
@@ -389,6 +415,8 @@ windower.register_event('incoming chunk', function(id, original, modified, injec
         if id == 0x03C and batch.phase == 'waiting_shop' then
             if stop_if_bad(batch) then return end
             batch.shop_seen = true
+            say(('Shop response received from %s. Starting sequential sales.'):format(
+                batch.npc_name), 'Shop')
             batch.phase = 'selling'
         elseif id == 0x03D and batch.phase == 'waiting_sale' and batch.pending then
             local ok, result = pcall(packets.parse, 'incoming', modified or original)
@@ -406,8 +434,17 @@ windower.register_event('addon command', function(command, ...)
     local args = {...}
     command = command and command:lower() or 'help'
     if command == 'help' then
-        say('//sellnpc preview <profile/item> | batch <profile/item> | status | stop')
-        say('//sellnpc <profile/item name>  (legacy single shop-open queue)')
+        windower.add_to_chat(0, string.color('-------- ', 140) .. string.color('SellNPC', 167)
+            .. string.color(' --------', 140))
+        local function help(syntax, description)
+            windower.add_to_chat(0, string.color('//sellnpc', 200) .. ' '
+                .. string.color(syntax, 207) .. ' ' .. string.color('->', 200) .. ' ' .. description)
+        end
+        help('preview <profile/item>', 'Show eligible items in Inventory, Satchel, Sack, Case (no changes).')
+        help('batch <profile/item>', 'Retrieve and sell one stack at a time to the nearby selected merchant.')
+        help('status', 'Report active step, progress, and confirmed sales.')
+        help('stop', 'Stop starting new transfers and sales.')
+        help('<profile/item>', 'Legacy queue; sell eligible Inventory items on next shop open.')
     elseif command == 'preview' then
         preview(#args > 0 and table.concat(args, ' '):lower() or nil)
     elseif command == 'batch' then
@@ -418,7 +455,7 @@ windower.register_event('addon command', function(command, ...)
         if batch then
             say(('%s at %s: %s, moved %d stacks; confirmed sold %d items / %d stacks.'):format(
                 batch.profile, batch.npc_name, batch.phase,
-                batch.moved_stacks, batch.sold_units, batch.sold_stacks))
+                batch.moved_stacks, batch.sold_units, batch.sold_stacks), 'Status')
         else say('No active batch.') end
     elseif batch then
         say('Batch active: only status and stop are accepted until it finishes.')
