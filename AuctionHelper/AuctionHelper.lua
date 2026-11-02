@@ -100,6 +100,9 @@ local function parse_short_bid(words)
         return nil
     end
     local price_index = size and n - 1 or n
+    if size and price_index >= 3 and words[price_index - 1]:match('^%d[%d,.]*$') then
+        return nil
+    end
     if price_index < 2 or not words[price_index]:match('^%d[%d,.]*$') then
         return nil
     end
