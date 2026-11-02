@@ -157,40 +157,85 @@ windower.register_event('logout', function()
 end)
 
 windower.register_event('addon command', function(...)
-    local commands = {...}
-    local now = os.clock()
-    if not actions and zones.ah:contains(res_zones[windower.ffxi.get_info().zone].name) and (not lclock or lclock < now) then	
-        if not commands[1] then
-            lclock = now+1
+    local words = {...}
+    local action = words[1] and words[1]:lower()
+
+    if not action then
+        if at_auction_house() and (not lclock or os.clock() >= lclock) then
+            lclock = os.clock() + 1
             open_menu_command()
-            return 
+        else
+            ah_help()
         end
-        commands[1] = commands[1]:lower()
-        if (commands[1] == 'buy' or commands[1] == 'sell') and commands[4] then
-            if ah_proposal(commands[1],table.concat(commands, ' ',2,#commands-2):lower(),commands[#commands-1]:lower(),commands[#commands]) then lclock = now+3 end
-        elseif commands[1] == 'clear' and commands[2] and commands[2]:lower() == 'sold' and auction_box then
+        return
+    elseif action == 'help' then
+        ah_help()
+        return
+    elseif action == 'status' then
+        ah_message('Status', 'v' .. _addon.version .. ' | Default: stack | Last: '
+            .. (last_buy and (last_buy.name .. ' (' .. last_buy.size .. ')') or 'none'))
+        return
+    elseif action == 'restart' or action == 'unload' then
+        ah_message('Lifecycle', action == 'restart' and 'Restarting.' or 'Unloading.')
+        windower.send_command(action == 'restart' and 'lua r AuctionHelper' or 'lua u AuctionHelper')
+        return
+    elseif action == 'bid' then
+        if #words ~= 2 or not last_buy then
+            ah_message('Usage', 'First use //ah <item> <price> [single|stack]; then //ah bid <price>.')
+        else
+            submit_buy(last_buy.name, last_buy.size, words[2])
+        end
+        return
+    elseif action == 'buy' or action == 'sell' then
+        if #words < 4 then
+            ah_message('Usage', '//ah ' .. action .. ' <item> <0|1> <price>')
+        elseif not at_auction_house() then
+            ah_message('Auction', 'Visit an Auction House zone first.')
+        elseif actions or (lclock and os.clock() < lclock) then
+            ah_message('Auction', 'Please allow the previous action to finish.')
+        else
+            if ah_proposal(action, table.concat(words, ' ', 2, #words - 2),
+                    words[#words - 1]:lower(), words[#words]) then
+                lclock = os.clock() + 3
+            end
+        end
+        return
+    elseif action == 'clear' then
+        if words[2] and words[2]:lower() == 'sold' and auction_box and at_auction_house() then
             remove_sold()
+            ah_message('Auction', 'Clearing finished auction slots.')
+        else
+            ah_message('Usage', '//ah clear sold (after opening the Auction House).')
+        end
+        return
+    elseif action == 'show' or action == 'hide' then
+        local enabled = action == 'show'
+        if not words[2] then
+            settings.auction_list.display = enabled
+            auction_list:visible(enabled)
+        elseif default.auction_list[words[2]:lower()] ~= nil then
+            settings.auction_list[words[2]:lower()] = enabled
+        else
+            ah_help()
             return
         end
-    end
-    if commands[1] == 'hide' then
-        if #commands == 1 then
-            settings.auction_list.display = false
-            auction_list:visible(false)
-        elseif default.auction_list[commands[2]:lower()] ~= nil then
-            settings.auction_list[commands[2]:lower()] = false
-        end
-    elseif commands[1] == 'show' then
-        if #commands == 1 then
-            settings.auction_list.display = true
-            auction_list:visible(true)
-        elseif default.auction_list[commands[2]:lower()] ~= nil then
-            settings.auction_list[commands[2]:lower()] = true
-        end
-    elseif commands[1] == 'save' then
+        ah_message('Display', enabled and 'Shown.' or 'Hidden.')
+        return
+    elseif action == 'save' then
         config.save(settings, 'all')
-    elseif commands[1] == 'eval' then
-        assert(loadstring(table.concat(commands, ' ',2)))()
+        ah_message('Settings', 'Saved.')
+        return
+    elseif action == 'eval' then
+        assert(loadstring(table.concat(words, ' ', 2)))()
+        return
+    end
+
+    local name, size, price = parse_short_bid(words)
+    if name then
+        submit_buy(name, size, price)
+    else
+        ah_message('Usage', 'Expected //ah <item> <price> [1|single|12|stack].')
+        ah_help()
     end
 end)
 
