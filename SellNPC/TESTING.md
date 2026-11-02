@@ -1,6 +1,25 @@
 # SellNPC — TESTING.md
 
-## Current Development Status — November 1, 2026 (Beta 3, America/Chicago)
+## Current Development Status — November 2, 2026 (sellability profile cleanup)
+
+- **Repository / branch:** `rerorriM-Mirrorer/Icydeath-ffxi-addons` / `sellnpc/skip-unsellable-junk-2026-11-02`, branched from Beta 3 `sellnpc/batch-feedback-and-target-2026-11-01` (source checkpoint `c7d286830e0ed952c437f13fb8e601b74ecb072c`). `master` and the prior Beta 3 branch remain untouched.
+- **Change:** Removed exactly four NPC-unsellable names from `junk`: Goblin Helm, Goblin Mail, Goblin Mask, Dhalmel Saliva. The original 266 distinct names become **262 distinct names**. The rest of `profiles.lua`, including `furrow` and newer Silk Thread, Papaka Grass, Shell Bug, is preserved.
+- **Source blobs:** Before `profiles.lua` = `f7b9aa6bd74fad1d22bf880b223f2de116bacb06`; after = `cb63670c2f11a3655f6114b6c309f220bf6f2617`. `SellNPC.lua` remains exactly `7d075030558a7ed83978ac57d4960810f618314a` (Beta 3); no sale/target/movement code was edited.
+- **Verification:** Used `texlua --luaonly tests/profile_check.lua` → `PROFILE PASS: 262 distinct junk entries, unsellables absent, added names present, furrow present`; and `texlua --luaonly tests/batch_sim.lua` → `SIMULATION PASS`. Profile file's Git blob hash matches the published remote. `texlua` uses Lua 5.3, not Windower's Lua 5.1; simulator uses mocked game APIs.
+- **FFXI:** User reported, in conversation, that the existing Beta 3 batch functionality "worked so beautifully" after earlier Beta 2 live sales were observed. This is **user-reported live success** without a new log proving full completion or attributing it to an exact addon version. This four-entry **profile-only** change has **not** been game-tested separately.
+- **Bags and pacing:** No behavior changes: Inventory, Satchel, Sack, Case only; one move/sale at a time with confirmations; BattleMod-style progress messages and remembered original merchant behavior retained.
+- **Next:** Replace only `SellNPC/profiles.lua` after finishing a running batch, then reload SellNPC. Run `//sellnpc preview junk` and verify those four names no longer appear as unvendable warnings. Record a final run summary when available.
+
+### 2026-11-02 — Four unsellable entries excluded
+
+- User asked if the previously observed four NPC-unsellable names had already been removed; they had **not** been removed from Beta 3. This update removes them.
+- User simultaneously reported strong positive live experience with the batch controller. Preserve the working code and its one-at-a-time pacing.
+- Profiles only (plus checker, README, TESTING) changed; no behavior change.
+- Offline tests pass; no new FFXI session performed by assistant.
+
+---
+
+## Previous Development Status — November 1, 2026 (Beta 3 before profile cleanup, America/Chicago)
 
 - **Repository / working branch:** `rerorriM-Mirrorer/Icydeath-ffxi-addons` / `sellnpc/batch-feedback-and-target-2026-11-01`, branched from `sellnpc/batch-verified-sales-2026-11-01`; `master` remains unchanged. Source baseline before this batch: Beta 2 `SellNPC.lua` blob `f04c84fed647481dc857ee800759fe63172a4712` and `profiles.lua` blob `a718748692dc62db90e0d2b48b0db0712a539f64`.
 - **Current code:** `SellNPC.lua` blob `bc8a5f7b9e244f2dd631579d9a37eca53715c6ec` and `profiles.lua` blob `f7b9aa6bd74fad1d22bf880b223f2de116bacb06`, verified after GitHub commits. `junk` now has **266 unique entries** (263 existing + Silk Thread, Papaka Grass, Shell Bug). Preserved `furrow` and previous user selections.
