@@ -1,6 +1,28 @@
 # SellNPC — TESTING.md
 
-## Current Development Status — November 1, 2026 (first live observations, America/Chicago)
+## Current Development Status — November 1, 2026 (Beta 3, America/Chicago)
+
+- **Repository / working branch:** `rerorriM-Mirrorer/Icydeath-ffxi-addons` / `sellnpc/batch-feedback-and-target-2026-11-01`, branched from `sellnpc/batch-verified-sales-2026-11-01`; `master` remains unchanged. Source baseline before this batch: Beta 2 `SellNPC.lua` blob `f04c84fed647481dc857ee800759fe63172a4712` and `profiles.lua` blob `a718748692dc62db90e0d2b48b0db0712a539f64`.
+- **Current code:** `SellNPC.lua` blob `bc8a5f7b9e244f2dd631579d9a37eca53715c6ec` and `profiles.lua` blob `f7b9aa6bd74fad1d22bf880b223f2de116bacb06`, verified after GitHub commits. `junk` now has **266 unique entries** (263 existing + Silk Thread, Papaka Grass, Shell Bug). Preserved `furrow` and previous user selections.
+- **User observation / request:** On Beta 2, Cioara experienced real sales and user believed they may have interrupted the batch. They requested visible progress before/after moves and sales, BattleMod-style chat formatting, and tolerance for current target changes while near the original merchant. The one-at-a-time sale behavior and bag restriction are intentional and preserved.
+- **Behavior changed:** Colored `SellNPC -> [Batch/Move/Shop/Sell/Sold/Done/Stop/Preview/Status]` messages describe each new action and its confirmation. Help uses color 140 separators, 167 header, 200 command arrows, and 207 syntax. The batch remembers the starting merchant by NPC ID/index/zone; does **not** require its continued selection, but still verifies that the same NPC exists within squared distance ≤36 and the original zone has not changed. No automatic new target selection or NPCMirror integration.
+- **Bag scope:** Main Inventory (0), Satchel (5), Sack (6), Case (7), unchanged. No Wardrobes, Mog Safe, Storage, Locker, etc. One move/sale in flight; up to 12 retrieved stacks per pass; reserves 2 Inventory slots.
+- **Static and simulated checks:** Ran `texlua --luaonly tests/batch_sim.lua` and `texlua --luaonly tests/profile_check.lua` from `SellNPC/`; both PASS. Tests cover per-stack progress text and chat mode/color calls, multi-pass batches, target changed or cleared, original merchant going out of range, no-shop/no-sale/no-move timeouts, stop/zone protection, single-item selection, legacy queue and 266-entry profile. `texlua` is a Lua 5.3 engine, not Windower's Lua 5.1; all game APIs/packets simulated.
+- **Actual live baseline:** **Partial Beta 2 live success only**, from user log in earlier status below. Beta 3 **has not been tried in FFXI**, and no new items were actually sold during this development session. Full-batch completion, shop lifecycle and real per-stack colored messages still need acceptance testing.
+- **Next acceptance:** Finish/stop any current Beta 2 batch before replacing files or reloading. Target a nearby normal vendor, run `//sellnpc preview Animal Glue`, then `//sellnpc batch Animal Glue`, observe move/shop/sale messages and `//sellnpc status`; test deliberately clearing target while staying near the remembered vendor, and cancel safely if the vendor moves out of range.
+- **Open question:** Whether a changed current target during NPC interaction is always harmless; we now rely on remembered merchant identity/range and server acknowledgment, never retarget another merchant. Continue checking that a stale shop does not produce false confirmation.
+- **Package:** Deliver `SellNPC/` testing ZIP with source, updated profile, cumulative testing excerpt, WORKFLOW.md, README.md, AGENTS.md, docs/PACKETS.md and simulator tests. Repository TESTING.md retains unabridged historical observations.
+
+### 2026-11-01 — Beta 3: user feedback, development, offline verification
+
+- User selected **Silk Thread**, **Papaka Grass**, and **Shell Bug** for NPC sale despite optional quest/crafting uses. They liked the exact bag scope and sequential pacing; asked for verbose BattleMod-compatible progress.
+- Changes limited to SellNPC sources, profile, tests and docs. No changes to NPCMirror, Itemizer, GearSwap or MogMover.
+- Offline simulation PASSED; no real FFXI run after this revision.
+- Delivery register: `SellNPC.lua` committed `c3c304a`; `profiles.lua` `3cb70b4`; simulator `af5c3e9`; profile checker `deadff5`. Final branch head reported in delivery, rather than self-referencing inside this file.
+
+---
+
+## Previous Development Status — November 1, 2026 (Beta 2 first live observations, America/Chicago)
 
 - **Branch / code under live review:** `rerorriM-Mirrorer/Icydeath-ffxi-addons` / `sellnpc/batch-verified-sales-2026-11-01`; initial Beta 2 implementation commit `da7c6d1d4c3777f77b867ad474fabea0ad028277`; target-guard adjustment commit `00fca3e392a80646b8682fcb695a75cbf7fd1b0d`. No SellNPC code change made in this log-analysis update.
 - **Live evidence:** User reported "it seems to be working awesome", supplied `Cioara_2026.11.01.log`, and tested on Cioara at NPC merchant **Rhimonne** (Lower Jeuno). This is first actual FFXI usage evidence, unlike the previous simulation-only checkpoint. The transcript has **no final completion summary** for the second batch.
