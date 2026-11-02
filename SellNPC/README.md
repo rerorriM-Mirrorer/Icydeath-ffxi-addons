@@ -1,5 +1,24 @@
 # SellNPC
 
+## Beta 3: readable progress and remembered merchant (current development build)
+
+The optional batch now explains every step in **BattleMod-style colored game chat**: `[Move]` before and after each storage retrieval, `[Shop]` when opening/receiving the merchant shop, `[Sell]` before one stack's sale request, `[Sold]` after its confirmed sale, and `[Batch]` when transitioning between passes. Help and status use the project's shared chat colors and `SellNPC ->` prefix. It still waits for each sale confirmation and Inventory reduction before proceeding.
+
+The batch **remembers the merchant selected at the start**. Clearing or changing the player's current target no longer interrupts a batch. The remembered NPC must still exist with the same ID and index in the same zone, and remain within interaction range. SellNPC never adopts a new target during a run. Be sure to target an ordinary vendor when starting.
+
+**Bags remain strictly Inventory, Satchel, Sack, Case**. No Wardrobes, Safe, Storage or Locker retrieval. `junk` now contains **266 unique names**, including newly selected `Papaka Grass`, `Shell Bug`, and `Silk Thread`. Those items can have quest/crafting uses, but are deliberately in this personal selling profile.
+
+For a cautious live test, make sure a prior batch is finished, reload SellNPC, then run:
+
+```text
+//sellnpc preview Animal Glue
+//sellnpc batch Animal Glue
+//sellnpc status
+```
+
+The code passes offline Lua simulations including target changes and action-by-action messages; **this revision has not yet been verified in live FFXI**. The previous Beta 2 showed real sales, but a target-change interruption. See [TESTING.md](TESTING.md) for cumulative results. Do not reload while a batch is active or interfere with another item's automatic transfers.
+
+
 ### Command Usage:
 ```
 sellnpc <item_name>	-- add item_name to sales queue. quotes not needed, accepts auto-translate. 
@@ -43,6 +62,8 @@ This is real, irreversible selling — **`batch` is not a dry-run**. Unlike `pre
 **Start with `//sellnpc preview Animal Glue`, then `//sellnpc batch Animal Glue`**, and check the real results before using the entire junk profile. See `TESTING.md` for live acceptance checks and known limits.
 
 ### Changelog
+
+- **2026-11-01 (Beta 3 working branch, live test pending):** Action-by-action colored chat, stable saved-merchant guard, and Papaka Grass, Shell Bug, Silk Thread in `junk`. No changes to sequential sale pacing or accessible bags.
 
 - **2026-11-01 (Beta 2 development branch; live testing pending):** Added preview, batch, status, stop, confirmation-driven sales, guarded Satchel/Sack/Case pulls, NPC target validation, and isolated Lua simulator; legacy sale commands remain available.
 
