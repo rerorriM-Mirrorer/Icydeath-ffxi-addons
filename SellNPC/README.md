@@ -23,6 +23,27 @@ The current `junk` list combines the previously maintained items with 40 common,
 
 **Development status:** See [TESTING.md](TESTING.md) for what was checked and what still requires a live FFXI test.
 
+### Beta 2: sequential batch retrieval and selling (not live-tested)
+
+The optional batch commands work **on one character** and use the item names in your existing `profiles.lua`. They do not require Itemizer or NPCMirror to be loaded: SellNPC uses the same Windower `move_item` API as Itemizer. It moves items only from **Satchel, Sack, and Case** (plus items already in Inventory). It deliberately excludes Wardrobes, Safe, Storage, Safe 2, and Locker to avoid conflict with GearSwap and remote storage limitations.
+
+```text
+//sellnpc preview junk         -- list eligible item quantities by bag; no changes
+//sellnpc preview Animal Glue  -- safely preview one item type
+//sellnpc batch Animal Glue    -- first live test: just one item type
+//sellnpc batch junk           -- start selling all eligible profile entries
+//sellnpc status               -- show current stage and confirmed sales
+//sellnpc stop                 -- stop additional transfers and sales
+```
+
+Target a **nearby ordinary NPC merchant** first, then run `//sellnpc batch <profile or item>` while idle and outside menus. The addon remembers that NPC, retrieves eligible stacks (up to 12 per pass, retaining two empty Inventory slots), interacts with the targeted merchant, and sends one sale at a time. It checks the NPC sale response (`0x03D`) **and** the Inventory change before proceeding. It attempts subsequent passes using the same shop context. Automatic shop reopening and bag movement while the menu is open are **not yet confirmed in FFXI**; the run stops rather than repeatedly guessing if an interaction or move times out.
+
+This is real, irreversible selling — **`batch` is not a dry-run**. Unlike `preview`, it moves items and can sell them immediately. Its `stop` command prevents new requests, but cannot undo an already-sent move or sale. `//sellnpc junk` without `batch` still uses the original immediate-on-next-shop behavior. During the first live tests, disable any MogMover mapping that would move the same items; do not run competing automated NPC sessions with NPCMirror.
+
+**Start with `//sellnpc preview Animal Glue`, then `//sellnpc batch Animal Glue`**, and check the real results before using the entire junk profile. See `TESTING.md` for live acceptance checks and known limits.
+
 ### Changelog
+
+- **2026-11-01 (Beta 2 development branch; live testing pending):** Added preview, batch, status, stop, confirmation-driven sales, guarded Satchel/Sack/Case pulls, NPC target validation, and isolated Lua simulator; legacy sale commands remain available.
 
 - **2026-11-01 (working branch, not yet FFXI-tested):** Added 40 everyday items to `junk`, removed one duplicate, kept existing profile choices intact. No auto-sell or Itemizer/NPCMirror behavior was changed.
