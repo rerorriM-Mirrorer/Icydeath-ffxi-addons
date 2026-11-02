@@ -94,6 +94,11 @@ local function parse_short_bid(words)
     local n = #words
     if n < 2 then return nil end
     local size = shorthand_size(words[n])
+    -- A numeric third argument after a price must be a recognized size alias.
+    if not size and n >= 3 and words[n - 1]:match('^%d[%d,.]*$')
+        and words[n]:match('^%d+$') then
+        return nil
+    end
     local price_index = size and n - 1 or n
     if price_index < 2 or not words[price_index]:match('^%d[%d,.]*$') then
         return nil
