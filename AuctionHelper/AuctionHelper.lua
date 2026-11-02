@@ -435,14 +435,14 @@ function remove_sold()
 end
 
 function format_price(price)
-    price = price:gsub('%p', '')
-    if (not price) or
-      (string.match(price,'%a')) or
-      (not tonumber(price)) or
-      (tonumber(price) < 1) then
+    if type(price) ~= 'string' or not price:match('^%d[%d,.]*$') then
         return nil
     end
-    return tonumber(price)
+    local numeric = tonumber(price:gsub('[,.]', ''))
+    if not numeric or numeric < 1 or numeric > 4294967295 then
+        return nil
+    end
+    return numeric
 end
 
 function stack_conv()
