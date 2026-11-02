@@ -443,7 +443,8 @@ function format_price(price)
     if type(price) ~= 'string' or not price:match('^%d[%d,.]*$') then
         return nil
     end
-    local numeric = tonumber(price:gsub('[,.]', ''))
+    local clean = price:gsub('[,.]', '')
+    local numeric = tonumber(clean)
     if not numeric or numeric < 1 or numeric > 4294967295 then
         return nil
     end
