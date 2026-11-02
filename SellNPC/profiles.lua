@@ -290,6 +290,10 @@ profiles['junk'] = S{
 	'Wild Onion',
 	'Wolf Hide',
 	'Yagudo Feather',
+	-- Additional user-selected junk (2026-11-01).
+	'Papaka Grass',
+	'Shell Bug',
+	'Silk Thread',
 }
 
 return profiles
