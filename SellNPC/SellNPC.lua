@@ -175,6 +175,10 @@ local function valid_merchant(s)
     if not npc or npc.index ~= s.npc_index or npc.distance == nil or npc.distance > 36 then
         return false, 'merchant unavailable, changed or out of range'
     end
+    local selected = windower.ffxi.get_mob_by_target('t')
+    if selected and selected.id ~= s.npc_id then
+        return false, 'target changed during vendor batch'
+    end
     return true
 end
 
