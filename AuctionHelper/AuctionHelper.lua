@@ -452,6 +452,14 @@ function ah_proposal(bid, item_name, vol, price)
     trans = trans..string.char(single,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
     --print('Modified packet 0x04E: %s\n%s bytes':format(space_hex(trans:hex()),#trans))	
     windower.packets.inject_outgoing(0x4E,trans)
+    if bid == 'buy' then
+        last_buy = {name = item.en, size = single == 1 and 'single' or 'stack', price = price}
+        ah_message('Bid', string.format('%s (%s) for %s gil submitted.',
+            item.en, last_buy.size, comma_value(tostring(price))))
+    else
+        ah_message('Sell', string.format('%s (%s) for %s gil submitted.',
+            item.en, single == 1 and 'single' or 'stack', comma_value(tostring(price))))
+    end
     return true
 end
 -----------------------------------------------------------------------------------------------------
