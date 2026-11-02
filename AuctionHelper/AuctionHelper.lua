@@ -417,12 +417,17 @@ function ah_proposal(bid, item_name, vol, price)
     if item.flags['No Auction'] == true then print(item.flags) return false end
 
     local single
-    if (item.stack ~= 1) and (vol == '1' or vol == 'stack') then
+    if vol == 'auto' or vol == nil then
+        single = item.stack == 1 and 1 or 0
+    elseif (item.stack ~= 1) and (vol == '1' or vol == 'stack') then
         single = 0
     elseif vol == '0' or vol == 'single' then
         single = 1
-    else print('AH Error: Specify Stack or Single') return false end
-    
+    else
+        ah_message('Item', 'Invalid size for ' .. item.en .. '. Use single or stack.')
+        return false
+    end
+
     local trans = string.char(0x4E,0x1E,0,0)
     
     price = format_price(price)
